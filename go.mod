@@ -1,4 +1,3 @@
-module github.com/veiloq/zlmd
+module github.com/veiloq/zulip-markdown
 
 go 1.24
-
