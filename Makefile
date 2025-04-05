@@ -44,6 +44,99 @@ all: test
 build:
 	$(GOBUILD) ./...
 
+# TARGET: build-binary
+#
+# DESCRIPTION:
+#   Compiles the CLI binary for the current platform ✅
+#
+# PREREQUISITES:
+#   - Go toolchain
+#
+# USAGE EXAMPLES:
+#   - make build-binary
+#
+build-binary:
+	@echo "==> Building binary for current platform"
+	mkdir -p $(BUILD_DIR)
+	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
+
+# TARGET: build-all
+#
+# DESCRIPTION:
+#   Builds binaries for all supported platforms ✅
+#
+# PREREQUISITES:
+#   - Go toolchain with cross-compilation support
+#
+# USAGE EXAMPLES:
+#   - make build-all
+#
+build-all: build-linux-amd64 build-linux-arm64 build-darwin-amd64 build-darwin-arm64
+
+# TARGET: build-linux-amd64
+#
+# DESCRIPTION:
+#   Builds binary for Linux AMD64 platform ✅
+#
+# PREREQUISITES:
+#   - Go toolchain with cross-compilation support
+#
+# USAGE EXAMPLES:
+#   - make build-linux-amd64
+#
+build-linux-amd64:
+	@echo "==> Building for Linux (amd64)"
+	mkdir -p $(BUILD_DIR)
+	GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 ./cmd/$(BINARY_NAME)
+
+# TARGET: build-linux-arm64
+#
+# DESCRIPTION:
+#   Builds binary for Linux ARM64 platform ✅
+#
+# PREREQUISITES:
+#   - Go toolchain with cross-compilation support
+#
+# USAGE EXAMPLES:
+#   - make build-linux-arm64
+#
+build-linux-arm64:
+	@echo "==> Building for Linux (arm64)"
+	mkdir -p $(BUILD_DIR)
+	GOOS=linux GOARCH=arm64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 ./cmd/$(BINARY_NAME)
+
+# TARGET: build-darwin-amd64
+#
+# DESCRIPTION:
+#   Builds binary for macOS AMD64 platform ✅
+#
+# PREREQUISITES:
+#   - Go toolchain with cross-compilation support
+#
+# USAGE EXAMPLES:
+#   - make build-darwin-amd64
+#
+build-darwin-amd64:
+	@echo "==> Building for macOS (amd64)"
+	mkdir -p $(BUILD_DIR)
+	GOOS=darwin GOARCH=amd64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 ./cmd/$(BINARY_NAME)
+
+# TARGET: build-darwin-arm64
+#
+# DESCRIPTION:
+#   Builds binary for macOS ARM64 platform ✅
+#
+# PREREQUISITES:
+#   - Go toolchain with cross-compilation support
+#
+# USAGE EXAMPLES:
+#   - make build-darwin-arm64
+#
+build-darwin-arm64:
+	@echo "==> Building for macOS (arm64)"
+	mkdir -p $(BUILD_DIR)
+	GOOS=darwin GOARCH=arm64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64 ./cmd/$(BINARY_NAME)
+
 # TARGET: install
 #
 # DESCRIPTION:

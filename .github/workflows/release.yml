@@ -12,6 +12,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    needs: [build]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -22,10 +23,12 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.24'
-
-      - name: Run tests
-        run: go test -v ./...
-        
+          
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          
       - name: Get version
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
@@ -44,7 +47,13 @@ jobs:
           echo "" >> release_notes.md
           echo "A Go library for working with Zulip-flavored Markdown." >> release_notes.md
           echo "" >> release_notes.md
-          echo "### Installation" >> release_notes.md
+          echo "### Binary Downloads" >> release_notes.md
+          echo "- [Linux (AMD64)](https://github.com/veiloq/zulip-markdown/releases/download/${{ steps.get_version.outputs.VERSION }}/zlmd-linux-amd64)" >> release_notes.md
+          echo "- [Linux (ARM64)](https://github.com/veiloq/zulip-markdown/releases/download/${{ steps.get_version.outputs.VERSION }}/zlmd-linux-arm64)" >> release_notes.md
+          echo "- [macOS (AMD64)](https://github.com/veiloq/zulip-markdown/releases/download/${{ steps.get_version.outputs.VERSION }}/zlmd-darwin-amd64)" >> release_notes.md
+          echo "- [macOS (ARM64/Apple Silicon)](https://github.com/veiloq/zulip-markdown/releases/download/${{ steps.get_version.outputs.VERSION }}/zlmd-darwin-arm64)" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Installation as Library" >> release_notes.md
           echo '```bash' >> release_notes.md
           echo "go get github.com/veiloq/zlmd@${{ steps.get_version.outputs.VERSION }}" >> release_notes.md
           echo '```' >> release_notes.md
@@ -55,6 +64,68 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          mkdir -p release
+          cp release-artifacts/zlmd-linux-amd64/zlmd-linux-amd64 release/
+          cp release-artifacts/zlmd-linux-arm64/zlmd-linux-arm64 release/
+          cp release-artifacts/zlmd-darwin-amd64/zlmd-darwin-amd64 release/
+          cp release-artifacts/zlmd-darwin-arm64/zlmd-darwin-arm64 release/
+          
+          # Make the binaries executable
+          chmod +x release/*
+          
           gh release create ${{ steps.get_version.outputs.VERSION }} \
             --title "ZLMD ${{ steps.get_version.outputs.VERSION }}" \
-            --notes-file release_notes.md 
+            --notes-file release_notes.md \
+            release/zlmd-linux-amd64 \
+            release/zlmd-linux-arm64 \
+            release/zlmd-darwin-amd64 \
+            release/zlmd-darwin-arm64
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin]
+        goarch: [amd64, arm64]
+        include:
+          - goos: linux
+            goarch: amd64
+            platform: linux-amd64
+          - goos: linux
+            goarch: arm64
+            platform: linux-arm64
+          - goos: darwin
+            goarch: amd64
+            platform: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            platform: darwin-arm64
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+          check-latest: true
+          cache: true
+          
+      - name: Install dependencies
+        run: make deps
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          make build-${{ matrix.goos }}-${{ matrix.goarch }}
+          
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: zlmd-${{ matrix.platform }}
+          path: build/zlmd-${{ matrix.platform }} 
